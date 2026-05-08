@@ -39,8 +39,7 @@ DATA_DIR = BASE_DIR / "data"
 DB_PATH = DATA_DIR / "experiment.db"
 
 TASK_KNOWN_NOTICE = (
-    "AI 已经可以看到本任务的基础背景材料，但看不到你的最终提交要求、评分标准和个人偏好。"
-    "你不需要复制背景材料全文，但需要告诉 AI 你希望它如何帮助你，以及最终答案需要满足哪些要求。"
+    "AI 已经可以看到本任务的基础背景材料。你可以根据自己的任务目标，自行决定如何向 AI 提问。"
 )
 
 SYSTEM_PROMPT = (
@@ -50,7 +49,9 @@ SYSTEM_PROMPT = (
     "不要提及实验设计、研究目的、能源消耗、碳排放、环保提示或用户所在实验组。\n"
     "不要主动评价用户的提问方式。\n"
     "回答应尽量简洁。除非用户明确要求展开，否则每次回复控制在 300 个中文字符以内。"
+    "对于写作任务，默认先给一版简洁可用的草稿，不要主动生成多个版本。"
     "对于代码任务，可以给出必要代码和简短解释，但不要写长篇教程。"
+    "不要主动给出过多格式化解释、评分分析或长篇说明。优先直接回应用户当前请求。"
 )
 
 TASKS = [
@@ -58,28 +59,19 @@ TASKS = [
         "id": "writing",
         "title": "任务一：撰写延期邮件",
         "ai_visible_context": (
-            "你正在帮助一名学生处理延期提交作业的邮件。\n\n"
-            "基础背景：\n"
-            "1. 作业原定今晚 23:59 截止。\n"
-            "2. 学生明天上午需要参加学院创新项目展示。\n"
-            "3. 学生负责展示 PPT 的最后整合。\n"
-            "4. 学生希望延期 3 天。\n"
-            "5. 学生已经完成了大约 70% 的作业。\n"
-            "6. 课程老师平时比较重视提前沟通和具体计划。"
+            "下面是学生整理的几条零散情况，准备给老师写一封延期沟通邮件：\n\n"
+            "- 今晚有一门课的作业截止；\n"
+            "- 学生明天上午需要参加学院创新项目展示；\n"
+            "- 学生负责展示 PPT 的最后整合；\n"
+            "- 作业已经做了一部分，但还没有完全收尾；\n"
+            "- 想和老师沟通能否晚一点提交；\n"
+            "- 老师平时比较重视提前沟通。"
         ),
         "participant_only_requirements": (
-            "你的最终邮件需要满足以下要求：\n\n"
-            "1. 邮件长度控制在 150-200 字；\n"
-            "2. 语气礼貌、简洁、可信；\n"
-            "3. 不要显得像在找借口；\n"
-            "4. 不要过度卑微；\n"
-            "5. 不要提家庭原因；\n"
-            "6. 不要提身体不舒服；\n"
-            "7. 不要承诺“以后绝不再犯”；\n"
-            "8. 要说明你已经完成约 70%；\n"
-            "9. 要提出明确的新提交时间；\n"
-            "10. 不希望邮件听起来太像 AI 生成。\n\n"
-            "AI 只能看到基础背景材料，看不到以上最终提交要求。你需要通过提问告诉 AI 你的具体要求。"
+            "请借助 AI，完成一封适合发给老师的延期申请邮件。\n\n"
+            "这封邮件应当自然、礼貌、可信，并适合真实发送。"
+            "你可以自行决定如何向 AI 提问、是否让 AI 修改，以及最终采用哪一版内容。\n\n"
+            "最终提交：一封你认为最适合发给老师的邮件。"
         ),
         "final_answer_label": "请提交你认为最适合发给老师的一版邮件。",
     },
@@ -87,81 +79,88 @@ TASKS = [
         "id": "summary",
         "title": "任务二：总结高校 AI 使用材料",
         "ai_visible_context": (
-            "你正在帮助学校整理一段关于“生成式 AI 进入高校学习场景”的材料。"
-            "AI 已经可以看到下面这段原始材料。\n\n"
+            "以下是一段关于生成式 AI 进入高校学习场景的材料：\n\n"
             "近年来，生成式人工智能逐渐进入高校学习场景。学生可以使用 AI 进行资料整理、文章润色、代码调试和观点生成。"
             "一方面，AI 工具提高了学习效率，帮助学生更快理解复杂内容；另一方面，过度依赖 AI 也可能削弱学生的独立思考能力，"
             "并带来学术诚信问题。部分教师主张完全禁止 AI 参与作业，认为这会破坏公平性；也有教师认为，与其禁止，"
             "不如引导学生合理使用 AI，并要求他们披露使用方式。高校未来需要在效率、诚信、学习能力培养之间取得平衡。"
         ),
         "participant_only_requirements": (
-            "你的最终答案需要包括三部分：\n"
-            "1. 面向普通学生的 120 字以内摘要；\n"
-            "2. 面向教师或管理者的三条风险提示；\n"
-            "3. 一条你自己的判断或建议。\n\n"
-            "其他要求：\n"
-            "- 语言要通俗，不要像政策文件；\n"
-            "- 风险提示不能只重复“学术诚信”，至少要覆盖学习能力、公平性或教学管理中的两个方面。"
+            "请借助 AI，基于左侧材料整理一份简短说明。\n\n"
+            "这份说明需要让读者快速理解：生成式 AI 进入高校学习场景后，可能带来哪些好处、风险，"
+            "以及你认为学校应该如何应对。\n\n"
+            "请你自行决定如何组织内容，使其清楚、通俗、有用。\n\n"
+            "最终提交：一份你认为清楚、有用的材料整理。"
         ),
-        "final_answer_label": "请提交你的摘要、三条风险提示和一条判断或建议。",
+        "final_answer_label": "请提交你认为清楚、有用的一份材料整理。",
     },
     {
         "id": "code",
-        "title": "任务三：解释并修正 Python 平均分代码",
+        "title": "任务三：解释并修正 Python 总收入代码",
         "ai_visible_context": (
-            "下面这段 Python 代码本来想计算平均分，但结果不正确。\n\n"
+            "下面这段 Python 代码本来想计算订单总收入，但结果不正确。\n\n"
             "```python\n"
-            "scores = [78, 85, 92, 66, 88]\n"
+            "orders = [\n"
+            "    {\"item\": \"book\", \"price\": 80, \"quantity\": 2},\n"
+            "    {\"item\": \"pen\", \"price\": 5, \"quantity\": 10},\n"
+            "    {\"item\": \"bag\", \"price\": 120, \"quantity\": 1}\n"
+            "]\n\n"
             "total = 0\n"
-            "for i in range(len(scores)):\n"
-            "    total = scores[i]\n"
-            "average = total / len(scores)\n"
-            "print(average)\n"
+            "for order in orders:\n"
+            "    total = order[\"price\"]\n\n"
+            "print(\"Total revenue:\", total)\n"
             "```"
         ),
         "participant_only_requirements": (
-            "最终你需要提交：\n"
-            "1. 错误原因；\n"
-            "2. 修正后的代码；\n"
-            "3. 一句适合 Python 初学者理解的解释；\n"
-            "4. 修正代码最好保留 for 循环写法，不要只给 sum(scores) 的简写；\n"
-            "5. 语言要简洁，不要写成长篇教程。\n\n"
-            "AI 只能看到代码和基础问题，看不到以上最终提交要求。你需要通过提问告诉 AI 的具体输出要求。"
+            "请借助 AI，检查这段 Python 代码为什么没有正确计算订单总收入，并整理一份适合初学者理解的修正说明。\n\n"
+            "请你自行决定如何向 AI 提问，并最终提交你认为最清楚、最有帮助的解释和修正代码。\n\n"
+            "最终提交：问题说明、修正代码和简短解释。"
         ),
-        "final_answer_label": "请提交错误原因、修正代码和一句适合初学者理解的解释。",
+        "final_answer_label": "请提交问题说明、修正代码和简短解释。",
     },
 ]
 
 TASK_REQUIREMENTS = {
     "writing": [
-        ("length_150_200", "邮件长度控制在 150-200 字"),
-        ("polite_concise_credible", "语气礼貌、简洁、可信"),
-        ("not_excuse_like", "不显得像在找借口"),
-        ("not_overly_submissive", "不过度卑微"),
-        ("no_family_reason", "不提家庭原因"),
-        ("no_health_reason", "不提身体不舒服"),
-        ("no_never_again_promise", "不承诺“以后绝不再犯”"),
-        ("mention_70_percent_done", "说明已经完成约 70%"),
-        ("specific_new_deadline", "提出明确的新提交时间"),
-        ("not_ai_like", "不希望邮件听起来太像 AI 生成"),
+        ("task_completion", "是否清楚表达了延期申请"),
+        ("reasonableness", "延期理由是否合理、可信、不过度夸张"),
+        ("actionability", "是否让老师清楚知道学生希望如何处理"),
+        ("tone_appropriateness", "语气是否礼貌、自然、不过度卑微"),
+        ("clarity", "表达是否清楚、简洁、容易理解"),
+        ("real_world_usability", "是否适合真实发送给老师"),
+        ("overall_quality", "整体质量"),
+        ("diagnostic_mostly_done", "诊断项：是否提到已完成大部分作业"),
+        ("diagnostic_new_arrangement", "诊断项：是否提出明确新提交安排"),
+        ("diagnostic_unnecessary_personal_reason", "诊断项：是否出现不必要的家庭/身体原因"),
+        ("diagnostic_ai_template_like", "诊断项：是否明显 AI 模板化"),
     ],
     "summary": [
-        ("student_facing_summary_under_120", "给普通学生看的 120 字以内摘要"),
-        ("three_risk_points", "包含三条风险提示"),
-        ("teacher_or_manager_audience", "风险提示面向教师或管理者"),
-        ("own_judgment_or_suggestion", "包含自己的判断或建议"),
-        ("plain_language", "语言通俗"),
-        ("not_policy_like", "不要像政策文件"),
-        ("risk_beyond_academic_integrity", "风险提示不能只重复学术诚信"),
-        ("covers_learning_ability_or_fairness_or_management", "至少覆盖学习能力、公平性或教学管理中的两个方面"),
+        ("relevance", "是否围绕左侧材料展开，没有跑题"),
+        ("coverage", "是否覆盖主要好处和主要风险"),
+        ("faithfulness_consistency", "是否忠实于原材料，没有编造重要事实"),
+        ("coherence", "结构是否清楚，逻辑是否连贯"),
+        ("usefulness", "是否对读者理解高校 AI 使用议题有帮助"),
+        ("practical_judgment", "是否包含合理判断或建议"),
+        ("fluency", "语言是否通顺、自然、通俗"),
+        ("overall_quality", "整体质量"),
+        ("diagnostic_learning_efficiency", "诊断项：是否提到学习效率"),
+        ("diagnostic_learning_ability_risk", "诊断项：是否提到学习能力风险"),
+        ("diagnostic_academic_integrity", "诊断项：是否提到学术诚信"),
+        ("diagnostic_fairness_or_management", "诊断项：是否提到公平性或教学管理"),
+        ("diagnostic_suggestion_or_judgment", "诊断项：是否包含建议或判断"),
     ],
     "code": [
-        ("identify_error_reason", "说明错误原因"),
-        ("provide_corrected_code", "提供修正后的代码"),
-        ("beginner_friendly_explanation", "包含适合 Python 初学者理解的解释"),
-        ("prefer_for_loop_fix", "修正代码最好保留 for 循环写法"),
-        ("avoid_only_sum_shortcut", "不要只给 sum(scores) 的简写"),
-        ("concise_explanation", "语言简洁，不写成长篇教程"),
+        ("bug_identification", "是否准确指出原代码的问题"),
+        ("correctness", "修正代码是否能正确计算总收入"),
+        ("conceptual_explanation", "是否解释了为什么原代码结果不对"),
+        ("beginner_suitability", "解释是否适合初学者理解"),
+        ("conciseness", "是否简洁，不写成长篇无关教程"),
+        ("overall_usefulness", "作为代码学习说明是否有帮助"),
+        ("overall_quality", "整体质量"),
+        ("diagnostic_total_overwritten", "诊断项：是否指出 total 被覆盖"),
+        ("diagnostic_price_times_quantity", "诊断项：是否指出需要计算 price × quantity"),
+        ("diagnostic_accumulation_logic", "诊断项：是否使用累加逻辑"),
+        ("diagnostic_final_result_reason", "诊断项：是否解释最后结果为什么不对"),
     ],
 }
 
@@ -311,16 +310,16 @@ def render_bullet_card(
 
 def render_energy_summary_card(cumulative_wh: float, cumulative_led: float):
     card_styles = (
-        "background-color: #EEF2FF; border: 1px solid #C7D2FE; border-radius: 12px; "
+        "background-color: #FFF7ED; border: 1px solid #FDBA74; border-radius: 12px; "
         "padding: 12px 14px; margin: 0 0 12px 0; line-height: 1.5"
     )
     st.markdown(
         (
             f'<div style="{card_styles};">'
-            '<div style="font-weight: 700; color: #3730A3; margin-bottom: 4px;">本任务累计能耗</div>'
-            '<div style="color: #374151;">'
-            f"本任务累计估算能耗：<strong>{cumulative_wh:.4f} Wh</strong>｜"
-            f"约等于 LED 灯点亮 <strong>{cumulative_led:.1f} 分钟</strong>"
+            '<div style="font-weight: 700; color: #C2410C; margin-bottom: 4px;">累计估算反馈</div>'
+            '<div style="color: #111827;">'
+            f"本任务累计：<strong>{cumulative_wh:.4f} Wh</strong><br>"
+            f"💡 LED 约 <strong>{cumulative_led:.1f} 分钟</strong>"
             "</div></div>"
         ),
         unsafe_allow_html=True,
@@ -329,15 +328,15 @@ def render_energy_summary_card(cumulative_wh: float, cumulative_led: float):
 
 def render_compact_energy_feedback(energy_wh: float, led_minutes: float, cumulative_wh: float, cumulative_led: float):
     card_styles = (
-        "background-color: #EEF2FF; border: 1px solid #C7D2FE; border-radius: 10px; "
-        "padding: 8px 12px; margin: 6px 0 12px 0; color: #3730A3; "
+        "background-color: #FFF7ED; border: 1px solid #FDBA74; border-radius: 10px; "
+        "padding: 8px 12px; margin: 6px 0 12px 0; color: #111827; "
         "font-size: 0.9rem; line-height: 1.45"
     )
     st.markdown(
         (
             f'<div style="{card_styles};">'
-            f"⚡ 本次估算：<strong>{energy_wh:.4f} Wh</strong> · LED <strong>{led_minutes:.1f} 分钟</strong>｜"
-            f"累计：<strong>{cumulative_wh:.4f} Wh</strong> · LED <strong>{cumulative_led:.1f} 分钟</strong>"
+            f"⚡ 本次估算：<strong>{energy_wh:.4f} Wh</strong>｜💡 LED 约 <strong>{led_minutes:.1f} 分钟</strong>｜"
+            f"累计：<strong>{cumulative_wh:.4f} Wh</strong>｜💡 LED 约 <strong>{cumulative_led:.1f} 分钟</strong>"
             "</div>"
         ),
         unsafe_allow_html=True,
@@ -362,8 +361,9 @@ def render_workspace_styles():
     st.markdown(
         (
             "<style>"
-            ".block-container{max-width:1320px;padding-top:2rem;padding-bottom:3rem;margin-left:auto;margin-right:auto;}"
+            ".block-container{max-width:1320px;padding-top:32px;padding-bottom:3rem;margin-left:auto;margin-right:auto;}"
             "h1{font-size:2.05rem!important;line-height:1.2!important;}"
+            "h2,h3{line-height:1.25!important;}"
             "[data-testid='stMarkdownContainer'] p{line-height:1.65;}"
             "</style>"
         ),
@@ -376,8 +376,7 @@ def task_context_message(ai_visible_context: str) -> dict:
         "role": "user",
         "content": (
             "当前任务的基础背景材料如下。用户接下来会请求你帮助完成该任务。"
-            "请基于这些基础材料回答用户的问题，但你看不到用户的最终提交要求、评分标准或个人偏好，"
-            "除非用户在对话中主动告诉你。\n\n"
+            "请基于这些基础材料回答用户的问题，不要假设未出现在对话中的额外要求。\n\n"
             f"{ai_visible_context}"
         ),
     }
@@ -543,6 +542,30 @@ def get_task_index(task_id: str) -> int:
     return 0
 
 
+def get_successful_prompt_count(task_id: str) -> int:
+    history = st.session_state.get("histories", {}).get(task_id, [])
+    session_count = sum(1 for message in history if message.get("role") == "user")
+    if session_count:
+        return session_count
+
+    participant_id = st.session_state.get("participant_id")
+    if not participant_id:
+        return 0
+    try:
+        with get_db() as conn:
+            row = conn.execute(
+                """
+                SELECT COUNT(*) AS prompt_count
+                FROM messages
+                WHERE participant_id = ? AND task_id = ?
+                """,
+                (participant_id, task_id),
+            ).fetchone()
+            return int(row["prompt_count"] if row else 0)
+    except Exception:
+        return 0
+
+
 def validate_pre_survey(gender, education, ai_usage_frequency, birth_year, birth_month) -> tuple[bool, list[str]]:
     errors = []
     if not isinstance(birth_year, int):
@@ -570,20 +593,18 @@ def validate_task_submission(final_answer) -> tuple[bool, str | None]:
 
 
 def validate_post_survey(
-    open_awareness,
     open_behavior_change,
-    open_feedback_preference,
-    open_productive_iteration,
-    open_feedback_fatigue,
-    open_design_suggestion,
+    open_feedback_effect=None,
+    open_dynamic_iteration_effect=None,
+    condition="control",
 ) -> tuple[bool, list[str]]:
     errors = []
     if len((open_behavior_change or "").strip()) < 5:
         errors.append("提问方式变化说明")
-    if len((open_feedback_preference or "").strip()) < 5:
-        errors.append("能耗提示偏好说明")
-    if len((open_productive_iteration or "").strip()) < 5:
-        errors.append("有价值追问放弃说明")
+    if condition in {"static_feedback", "dynamic_feedback"} and len((open_feedback_effect or "").strip()) < 5:
+        errors.append("提示或反馈影响说明")
+    if condition == "dynamic_feedback" and len((open_dynamic_iteration_effect or "").strip()) < 5:
+        errors.append("继续追问或修改意愿说明")
     return len(errors) == 0, errors
 
 
@@ -712,7 +733,23 @@ def init_db():
                 open_feedback_preference TEXT,
                 open_productive_iteration TEXT,
                 open_feedback_fatigue TEXT,
-                open_design_suggestion TEXT
+                open_design_suggestion TEXT,
+                q_hypothetical_feedback_helpful INTEGER,
+                q_hypothetical_low_energy_mode INTEGER,
+                q_hypothetical_wait_acceptance INTEGER,
+                q_hypothetical_quality_tradeoff INTEGER,
+                q_static_feedback_attention INTEGER,
+                q_static_feedback_understandability INTEGER,
+                q_static_feedback_behavior_change INTEGER,
+                q_static_feedback_pressure INTEGER,
+                q_dynamic_feedback_attention INTEGER,
+                q_dynamic_feedback_understandability INTEGER,
+                q_dynamic_feedback_behavior_change INTEGER,
+                q_dynamic_cumulative_salience INTEGER,
+                q_dynamic_feedback_pressure INTEGER,
+                q_dynamic_feedback_fatigue INTEGER,
+                open_feedback_effect TEXT,
+                open_dynamic_iteration_effect TEXT
             )
             """
         )
@@ -760,6 +797,22 @@ def init_db():
                 "open_productive_iteration": "TEXT",
                 "open_feedback_fatigue": "TEXT",
                 "open_design_suggestion": "TEXT",
+                "q_hypothetical_feedback_helpful": "INTEGER",
+                "q_hypothetical_low_energy_mode": "INTEGER",
+                "q_hypothetical_wait_acceptance": "INTEGER",
+                "q_hypothetical_quality_tradeoff": "INTEGER",
+                "q_static_feedback_attention": "INTEGER",
+                "q_static_feedback_understandability": "INTEGER",
+                "q_static_feedback_behavior_change": "INTEGER",
+                "q_static_feedback_pressure": "INTEGER",
+                "q_dynamic_feedback_attention": "INTEGER",
+                "q_dynamic_feedback_understandability": "INTEGER",
+                "q_dynamic_feedback_behavior_change": "INTEGER",
+                "q_dynamic_cumulative_salience": "INTEGER",
+                "q_dynamic_feedback_pressure": "INTEGER",
+                "q_dynamic_feedback_fatigue": "INTEGER",
+                "open_feedback_effect": "TEXT",
+                "open_dynamic_iteration_effect": "TEXT",
             },
         )
         ensure_columns(
@@ -996,70 +1049,76 @@ def save_task_session(task_id: str, final_answer: str, satisfaction: int, percei
 
 
 def save_post_survey(data: dict):
+    columns = [
+        "participant_id",
+        "condition",
+        "submitted_at",
+        "q_low_energy_wait",
+        "q_low_energy_quality",
+        "q_default_low_energy",
+        "q_feedback_attention",
+        "q_feedback_understandability",
+        "q_feedback_helpfulness",
+        "q_feedback_intrusiveness",
+        "q_feedback_pressure",
+        "q_feedback_guilt",
+        "q_interaction_penalty",
+        "q_feedback_fatigue",
+        "q_long_term_acceptance",
+        "q_task_dependent_feedback",
+        "open_awareness",
+        "open_behavior_change",
+        "open_feedback_preference",
+        "open_productive_iteration",
+        "open_feedback_fatigue",
+        "open_design_suggestion",
+        "q_hypothetical_feedback_helpful",
+        "q_hypothetical_low_energy_mode",
+        "q_hypothetical_wait_acceptance",
+        "q_hypothetical_quality_tradeoff",
+        "q_static_feedback_attention",
+        "q_static_feedback_understandability",
+        "q_static_feedback_behavior_change",
+        "q_static_feedback_pressure",
+        "q_dynamic_feedback_attention",
+        "q_dynamic_feedback_understandability",
+        "q_dynamic_feedback_behavior_change",
+        "q_dynamic_cumulative_salience",
+        "q_dynamic_feedback_pressure",
+        "q_dynamic_feedback_fatigue",
+        "open_feedback_effect",
+        "open_dynamic_iteration_effect",
+    ]
+    values = {
+        "participant_id": st.session_state.participant_id,
+        "condition": st.session_state.condition,
+        "submitted_at": now_iso(),
+    }
+    for column in columns:
+        if column not in values:
+            values[column] = data.get(column)
+
     with get_db() as conn:
         existing = conn.execute(
             """
             SELECT id FROM questionnaires
-            WHERE participant_id = ? AND q_low_energy_wait IS NOT NULL
+            WHERE participant_id = ?
             ORDER BY id DESC LIMIT 1
             """,
             (st.session_state.participant_id,),
         ).fetchone()
-        questionnaire_values = (
-            st.session_state.participant_id,
-            st.session_state.condition,
-            now_iso(),
-            data["q_low_energy_wait"],
-            data["q_low_energy_quality"],
-            data["q_default_low_energy"],
-            data["q_feedback_attention"],
-            data["q_feedback_understandability"],
-            data["q_feedback_helpfulness"],
-            data["q_feedback_intrusiveness"],
-            data["q_feedback_pressure"],
-            data["q_feedback_guilt"],
-            data["q_interaction_penalty"],
-            data["q_feedback_fatigue"],
-            data["q_long_term_acceptance"],
-            data["q_task_dependent_feedback"],
-            data["open_awareness"],
-            data["open_behavior_change"],
-            data["open_feedback_preference"],
-            data["open_productive_iteration"],
-            data["open_feedback_fatigue"],
-            data["open_design_suggestion"],
-        )
+        questionnaire_values = tuple(values[column] for column in columns)
         if existing:
+            assignments = ", ".join([f"{column} = ?" for column in columns])
             conn.execute(
-                """
-                UPDATE questionnaires
-                SET participant_id = ?, condition = ?, submitted_at = ?,
-                    q_low_energy_wait = ?, q_low_energy_quality = ?, q_default_low_energy = ?,
-                    q_feedback_attention = ?, q_feedback_understandability = ?, q_feedback_helpfulness = ?,
-                    q_feedback_intrusiveness = ?, q_feedback_pressure = ?, q_feedback_guilt = ?,
-                    q_interaction_penalty = ?, q_feedback_fatigue = ?, q_long_term_acceptance = ?,
-                    q_task_dependent_feedback = ?,
-                    open_awareness = ?, open_behavior_change = ?, open_feedback_preference = ?,
-                    open_productive_iteration = ?, open_feedback_fatigue = ?, open_design_suggestion = ?
-                WHERE id = ?
-                """,
+                f"UPDATE questionnaires SET {assignments} WHERE id = ?",
                 questionnaire_values + (existing["id"],),
             )
         else:
+            placeholders = ", ".join(["?"] * len(columns))
+            column_sql = ", ".join(columns)
             conn.execute(
-                """
-                INSERT INTO questionnaires (
-                    participant_id, condition, submitted_at,
-                    q_low_energy_wait, q_low_energy_quality, q_default_low_energy,
-                    q_feedback_attention, q_feedback_understandability, q_feedback_helpfulness,
-                    q_feedback_intrusiveness, q_feedback_pressure, q_feedback_guilt,
-                    q_interaction_penalty, q_feedback_fatigue, q_long_term_acceptance,
-                    q_task_dependent_feedback,
-                    open_awareness, open_behavior_change, open_feedback_preference,
-                    open_productive_iteration, open_feedback_fatigue, open_design_suggestion
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
+                f"INSERT INTO questionnaires ({column_sql}) VALUES ({placeholders})",
                 questionnaire_values,
             )
         conn.execute(
@@ -1144,8 +1203,27 @@ def make_prompt_coding_file() -> pd.DataFrame:
 
 def make_prompt_coding_template() -> pd.DataFrame:
     source = make_prompt_coding_file()
+    template_columns = [
+        "blind_prompt_id",
+        "task_id",
+        "task_index",
+        "turn_id",
+        "user_prompt",
+        "previous_ai_response",
+        "next_ai_response",
+        "task_copy_similarity",
+        "is_task_copying",
+        "prompt_type",
+        "prompt_specificity_score",
+        "strategic_prompting_score",
+        "productive_iteration",
+        "low_value_prompt",
+        "mechanical_copying",
+        "coder_id",
+        "coder_notes",
+    ]
     if source.empty:
-        return source
+        return pd.DataFrame(columns=template_columns)
     template = source[
         [
             "blind_prompt_id",
@@ -1155,20 +1233,22 @@ def make_prompt_coding_template() -> pd.DataFrame:
             "user_prompt",
             "previous_ai_response",
             "next_ai_response",
+            "task_copy_similarity",
+            "is_task_copying",
         ]
     ].copy()
     for column in [
         "prompt_type",
-        "requirement_transmission_count",
+        "prompt_specificity_score",
+        "strategic_prompting_score",
         "productive_iteration",
         "low_value_prompt",
         "mechanical_copying",
-        "strategic_prompting_score",
         "coder_id",
         "coder_notes",
     ]:
         template[column] = ""
-    return template
+    return template[template_columns]
 
 
 def make_blind_rating_exports() -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -1186,8 +1266,15 @@ def make_blind_rating_exports() -> tuple[pd.DataFrame, pd.DataFrame]:
     df = df.sample(frac=1, random_state=20260507).reset_index(drop=True)
     df.insert(0, "blind_task_id", [f"BT{i:06d}" for i in range(1, len(df) + 1)])
     rating_file = df[["blind_task_id", "task_id", "task_index", "final_answer"]].copy()
+    rating_file["task_completion"] = ""
+    rating_file["relevance"] = ""
+    rating_file["clarity"] = ""
+    rating_file["coherence"] = ""
+    rating_file["usefulness"] = ""
+    rating_file["correctness_for_code"] = ""
+    rating_file["real_world_usability"] = ""
     rating_file["overall_quality"] = ""
-    rating_file["requirement_hit_rate"] = ""
+    rating_file["diagnostic_notes"] = ""
     rating_file["rater_id"] = ""
     rating_file["rater_notes"] = ""
     key_file = df[["blind_task_id", "participant_id", "condition", "task_id", "task_index"]].copy()
@@ -1281,35 +1368,21 @@ def debug_sidebar():
 # ====================
 
 def page_consent():
-    st.subheader("知情同意")
-    st.write("你将完成 3 个简短任务，并可以与 AI 助手对话来帮助完成任务。")
-
-    render_bullet_card(
-        "你将做什么",
-        [
-            "你将依次完成 3 个任务；",
-            "每个任务中，你可以与 AI 助手对话获得帮助；",
-            f"每个任务最多可以向 AI 提问 {MAX_TURNS_PER_TASK} 轮；",
-            "每个任务结束时，你需要提交一个最终答案；",
-            "完成全部任务后，你将填写一份简短问卷。",
-        ],
-        "info",
-    )
+    st.title("知情同意")
     render_card(
-        "研究数据说明",
+        "研究介绍与任务说明",
         (
-            "本研究会记录你的问卷回答、任务操作过程、你输入给 AI 的问题、AI 回复内容、"
-            "任务最终答案，以及与任务完成相关的时间和交互信息。"
+            "我们是来自西交利物浦大学产业家学院的研究团队，正在开展一项关于 AI 辅助任务完成方式的研究。\n\n"
+            "在本研究中，您需要依次完成三个简短任务：邮件撰写、摘要撰写和代码修改。\n\n"
+            f"每个任务中，您可以向页面中的 AI 助手提问，最多 {MAX_TURNS_PER_TASK} 轮。"
+            "每个任务结束时，您需要提交一份最终答案。\n\n"
+            "数据研究说明与隐私安全：\n"
+            "本研究会记录您的问卷回答、任务操作过程、输入给 AI 的问题、AI 回复内容和最终提交答案。"
             "所有数据将以匿名编号保存，仅用于学术研究分析。"
+            "您的输入内容会发送给第三方大模型 API 用于生成回复，请不要输入真实姓名、手机号、身份证号、住址、"
+            "账号密码、商业机密或其他敏感信息。"
         ),
-    )
-    render_card(
-        "隐私与安全",
-        (
-            "你的输入内容会发送给第三方大模型 API，用于生成 AI 回复。"
-            "请不要输入真实姓名、手机号、身份证号、住址、账号密码、商业机密或其他敏感信息。"
-        ),
-        "warning",
+        "info",
     )
     render_card(
         "估算反馈说明",
@@ -1320,7 +1393,7 @@ def page_consent():
         "info",
     )
     agreed = st.checkbox("我已阅读并同意参与本研究")
-    if st.button("进入前测问卷", type="primary"):
+    if st.button("下一页", type="primary"):
         if not agreed:
             st.warning("请先勾选知情同意后再进入下一步。")
             return
@@ -1330,11 +1403,14 @@ def page_consent():
 
 
 def page_pre_survey():
-    st.header("前测问卷")
-    render_card(
-        "填写说明",
-        "本页用于了解你的基本背景和 AI 使用经验。所有信息仅用于统计分析，不会用于识别个人身份。",
-        "info",
+    st.markdown(
+        (
+            '<div style="padding-top: 18px; margin-bottom: 18px; '
+            'font-size: 1rem; line-height: 1.8; color: #111827;">'
+            "请根据您的真实情况填写以下信息。"
+            "</div>"
+        ),
+        unsafe_allow_html=True,
     )
 
     with st.form("pre_survey_form"):
@@ -1344,34 +1420,37 @@ def page_pre_survey():
             birth_year = st.selectbox("出生年份", birth_year_options())
         with birth_col2:
             birth_month = st.selectbox("出生月份", birth_month_options(), format_func=lambda value: f"{value} 月" if isinstance(value, int) else value)
-        gender = st.selectbox("性别", ["请选择", "女", "男", "非二元/其他", "不愿透露"])
+        gender = st.selectbox("性别", ["请选择", "男", "女"])
         education = st.selectbox("教育程度", ["请选择", "高中及以下", "大专", "本科", "硕士", "博士及以上", "其他"])
         ai_usage_frequency = st.selectbox(
             "AI 使用频率",
             ["请选择", "几乎不用", "每月几次", "每周几次", "每天", "每天多次"],
         )
 
-        st.subheader("AI 使用经验")
-        render_likert_instruction()
+        st.subheader("基本看法")
+        st.caption("以下题目没有正确或错误答案，请根据真实想法选择。1 = 非常不同意，7 = 非常同意。")
         q_ai_use_1 = likert("我经常使用生成式 AI 工具完成学习、工作或生活任务。", "q_ai_use_1", value=None)
         q_ai_use_2 = likert("我认为自己比较擅长向 AI 提出清晰的问题。", "q_ai_use_2", value=None)
 
-        st.subheader("AI 资源认知")
-        render_likert_instruction()
         q_energy_awareness_1 = likert("我知道生成式 AI 每次回答都需要消耗计算资源。", "q_energy_awareness_1", value=None)
         q_energy_awareness_2 = likert("我知道 AI 数据中心可能消耗大量电力。", "q_energy_awareness_2", value=None)
         q_energy_awareness_3 = likert("在使用 AI 时，我通常会考虑它背后的能源成本。", "q_energy_awareness_3", value=None)
 
-        st.subheader("环保与责任态度")
-        render_likert_instruction()
         q_environment_1 = likert("我愿意在日常生活中采取行动减少能源浪费。", "q_environment_1", value=None)
         q_environment_2 = likert("我认为科技产品应该向用户披露环境影响。", "q_environment_2", value=None)
 
         st.subheader("注意力检查")
-        render_likert_instruction()
         attention_check = likert("为了确认你认真阅读，请在本题选择 6。", "attention_check", value=None)
 
-        submitted = st.form_submit_button("提交前测问卷", type="primary")
+        nav_left, back_col, next_col, nav_right = st.columns([1, 0.35, 0.35, 1])
+        with back_col:
+            go_back = st.form_submit_button("上一页")
+        with next_col:
+            submitted = st.form_submit_button("下一页", type="primary")
+
+    if go_back:
+        st.session_state.page = "consent"
+        rerun()
 
     if submitted:
         is_valid, errors = validate_pre_survey(gender, education, ai_usage_frequency, birth_year, birth_month)
@@ -1419,49 +1498,24 @@ def page_pre_survey():
 
 
 def page_instruction():
-    st.header("实验说明")
+    st.header("任务操作说明")
     render_bullet_card(
-        "任务规则",
+        "请先阅读这三条规则",
         [
-            "你将依次完成 3 个任务；",
-            f"每个任务最多可以向 AI 提问 {MAX_TURNS_PER_TASK} 轮；",
-            "三个任务之间的对话历史不会共享；",
-            "每个任务结束时，你需要提交一个最终答案；",
-            "AI 的回复不会自动成为最终答案，你需要自己决定最终提交内容。",
+            f"您将依次完成三个任务，每个任务最多可以向 AI 提问 {MAX_TURNS_PER_TASK} 轮。",
+            "每个任务中，AI 已经可以看到页面提供的基础材料。您可以根据自己的判断向 AI 提问。",
+            "AI 的回复不会自动提交。每个任务结束时，请在最终答案框中提交您决定采用的答案。",
         ],
         "info",
     )
-    render_card(
-        "重要说明：AI 只知道部分任务信息",
-        (
-            "每个任务中，AI 已经可以看到基础背景材料。但是，AI 看不到你的最终提交要求、"
-            "评分标准和个人偏好。如果你希望 AI 满足这些要求，需要在提问中主动告诉 AI。"
-        ),
-        "warning",
-    )
-
-    condition = st.session_state.condition
-    if condition == "static_feedback":
-        render_card(
-            "能耗提示",
-            (
-                "每次 AI 请求都需要服务器计算，并会消耗一定电力。"
-                "本实验中的能耗数值为研究目的下的估算反馈。你仍然可以自由使用 AI 完成任务。"
-            ),
-            "energy",
-        )
-    elif condition == "dynamic_feedback":
-        render_card(
-            "实时能耗反馈已开启",
-            (
-                "在接下来的任务中，每次 AI 回复后，系统会显示本次请求的估算能耗、"
-                "当前任务的累计估算能耗，以及对应的 LED 灯点亮时间类比。"
-                "你仍然可以自由使用 AI 完成任务。"
-            ),
-            "energy",
-        )
-
-    if st.button("开始任务", type="primary"):
+    nav_left, back_col, next_col, nav_right = st.columns([1, 0.35, 0.35, 1])
+    with back_col:
+        if st.button("上一页"):
+            st.session_state.page = "pre_survey"
+            rerun()
+    with next_col:
+        next_clicked = st.button("下一页", type="primary")
+    if next_clicked:
         log_event("instruction_completed")
         st.session_state.page = "task"
         rerun()
@@ -1486,12 +1540,12 @@ def render_chat(task: dict, energy_summary_slot=None):
                 message.get("cumulative_led_minutes", 0.0),
             )
 
-    turns_used = st.session_state.turn_counts[task_id]
+    turns_used = get_successful_prompt_count(task_id)
+    st.session_state.turn_counts[task_id] = turns_used
     turns_left = MAX_TURNS_PER_TASK - turns_used
-    st.caption(f"本任务剩余 AI 对话轮数：{turns_left}")
 
     if turns_left <= 0:
-        st.warning("本任务的 AI 对话轮数已用完。请在下方提交最终答案。")
+        st.warning("本任务的 AI 提问次数已用完，请在下方提交最终答案。")
         return
 
     prompt = st.chat_input("输入你想问 AI 的问题")
@@ -1501,17 +1555,17 @@ def render_chat(task: dict, energy_summary_slot=None):
     prompt_timestamp = now_iso()
     next_turn = turns_used + 1
     context_similarity = calculate_task_copy_similarity(prompt, task["ai_visible_context"])
-    requirements_similarity = calculate_task_copy_similarity(prompt, task["participant_only_requirements"])
-    similarity = max(context_similarity, requirements_similarity)
+    right_goal_similarity = calculate_task_copy_similarity(prompt, task["participant_only_requirements"])
+    similarity = max(context_similarity, right_goal_similarity)
     is_task_copying = 1 if similarity >= TASK_COPY_THRESHOLD else 0
     is_context_copying = 1 if context_similarity >= TASK_COPY_THRESHOLD else 0
-    is_requirements_copying = 1 if requirements_similarity >= TASK_COPY_THRESHOLD else 0
+    is_requirements_copying = 1 if right_goal_similarity >= TASK_COPY_THRESHOLD else 0
 
     log_event(
         "prompt_submitted",
         event_value=(
             f"turn_id={next_turn};copy_similarity={similarity:.2f};"
-            f"context_similarity={context_similarity:.2f};requirements_similarity={requirements_similarity:.2f}"
+            f"context_similarity={context_similarity:.2f};right_goal_similarity={right_goal_similarity:.2f}"
         ),
         task_id=task_id,
     )
@@ -1588,7 +1642,7 @@ def render_chat(task: dict, energy_summary_slot=None):
             "task_copy_similarity": similarity,
             "is_task_copying": is_task_copying,
             "context_copy_similarity": context_similarity,
-            "requirements_copy_similarity": requirements_similarity,
+            "requirements_copy_similarity": right_goal_similarity,
             "is_context_copying": is_context_copying,
             "is_requirements_copying": is_requirements_copying,
             "feedback_displayed": feedback_displayed,
@@ -1599,6 +1653,7 @@ def render_chat(task: dict, energy_summary_slot=None):
         }
     )
     log_event("ai_response_generated", event_value=f"turn_id={next_turn};total_tokens={total_tokens}", task_id=task_id)
+    rerun()
 
 
 def render_task_submission(task: dict):
@@ -1606,11 +1661,9 @@ def render_task_submission(task: dict):
     st.divider()
     render_card(
         "最终提交答案",
-        "请根据 AI 的帮助，提交你最终决定使用的答案。AI 的回复不会自动提交，你可以直接使用 AI 的内容，也可以修改后提交。",
+        "请根据 AI 的帮助，提交您最终决定采用的答案。AI 的回复不会自动提交。",
         "default",
     )
-    is_last_task = st.session_state.current_task_index >= len(TASKS) - 1
-    button_label = "提交本任务并进入实验后问卷" if is_last_task else "提交本任务并进入下一任务"
 
     with st.form(f"final_form_{task_id}"):
         final_answer = st.text_area(task["final_answer_label"], height=180)
@@ -1619,7 +1672,7 @@ def render_task_submission(task: dict):
         satisfaction = likert("我对本任务最终结果满意。", f"satisfaction_{task_id}")
         perceived_efficiency = likert("AI 帮助我高效完成了本任务。", f"perceived_efficiency_{task_id}")
         cognitive_load = likert("完成这个任务让我感到费力。", f"cognitive_load_{task_id}")
-        submitted = st.form_submit_button(button_label, type="primary")
+        submitted = st.form_submit_button("提交本任务", type="primary")
 
     if submitted:
         is_valid, error_message = validate_task_submission(final_answer)
@@ -1653,130 +1706,126 @@ def page_task():
         log_event("task_started", task_id=task_id)
 
     task_number = st.session_state.current_task_index + 1
-    turns_used = st.session_state.turn_counts[task_id]
+    turns_used = get_successful_prompt_count(task_id)
+    st.session_state.turn_counts[task_id] = turns_used
     turns_left = MAX_TURNS_PER_TASK - turns_used
 
-    st.header(f"任务 {task_number}/{len(TASKS)}：{task['title']}")
-    st.progress(task_number / len(TASKS))
-    status_col1, status_col2, status_col3 = st.columns(3)
-    status_col1.metric("任务进度", f"{task_number}/{len(TASKS)}")
-    status_col2.metric("剩余 AI 对话轮次", f"{turns_left}/{MAX_TURNS_PER_TASK}")
-    status_col3.metric("当前阶段", "AI 协作生成 → 最终答案提交")
+    st.header(task["title"])
+    st.caption(f"第 {task_number} 个任务，共 {len(TASKS)} 个｜剩余 AI 提问次数：{turns_left}")
 
-    if st.session_state.condition == "static_feedback":
-        render_card(
-            "能耗提示",
-            "每次 AI 请求都需要服务器计算，并会消耗一定电力。本实验中的能耗数值为研究目的下的估算反馈。",
-            "energy",
-        )
-    energy_summary_slot = None
-    if st.session_state.condition == "dynamic_feedback":
-        energy_summary_slot = st.empty()
-        with energy_summary_slot:
-            render_energy_summary_card(
-                st.session_state.cumulative_energy[task_id],
-                st.session_state.cumulative_led[task_id],
-            )
+    render_card("你的任务", task["participant_only_requirements"], "warning")
 
-    left_col, middle_col, right_col = st.columns([1.0, 1.8, 1.0])
-
-    with left_col:
-        st.subheader("AI 已知信息")
+    st.subheader("AI 已知材料")
+    st.caption("以下材料已经提供给 AI，您不需要重复复制。")
+    material_expanded = task["id"] != "summary"
+    with st.expander("查看 AI 已知材料", expanded=material_expanded):
         render_ai_visible_context(task)
 
-    with middle_col:
+    chat_col, status_col = st.columns([1.65, 0.75])
+    energy_summary_slot = None
+
+    with status_col:
+        st.subheader("任务状态")
+        render_card("剩余提问次数", f"{turns_left}", "default")
+        if st.session_state.condition == "static_feedback":
+            render_card(
+                "提示",
+                "AI 请求会消耗一定计算资源和电力。本实验中的相关数值均为估算。",
+                "energy",
+            )
+        elif st.session_state.condition == "dynamic_feedback":
+            energy_summary_slot = st.empty()
+            with energy_summary_slot:
+                render_energy_summary_card(
+                    st.session_state.cumulative_energy[task_id],
+                    st.session_state.cumulative_led[task_id],
+                )
+
+    with chat_col:
         st.subheader("AI 对话区")
         render_card(
             "对话提示",
-            "请向 AI 说明你希望它如何帮助你。一个有效请求通常包括：目标、输出格式、关键约束和排除项。",
+            "您可以告诉 AI 想完成什么，也可以根据需要补充格式、语气或限制条件。",
             "default",
         )
         render_chat(task, energy_summary_slot)
-
-    with right_col:
-        st.subheader("你的提交要求")
-        render_card(
-            "AI 默认看不到这些要求。若希望 AI 满足它们，请在提问中主动说明。",
-            task["participant_only_requirements"],
-            "warning",
-            max_height=520,
-        )
-        render_card("请注意", "这些要求不会自动发送给 AI。", "warning")
 
     render_task_submission(task)
 
 
 def page_post_survey():
-    st.header("实验后问卷")
-    show_estimation_notice()
+    st.header("最后几个问题")
+    condition = st.session_state.condition
 
     with st.form("post_survey_form"):
-        render_card("低能耗模式偏好", "请根据你对真实 AI 产品功能设计的接受程度作答。", "info")
+        render_card("未来产品假设题", "以下问题是假设未来 AI 产品可能提供相关功能，请根据真实想法选择。", "info")
         render_likert_instruction()
-        q_low_energy_wait = likert(
-            "如果 AI 的低能耗模式可以减少约 30% 的估算能耗，但回答时间从 3 秒增加到 8 秒，我愿意开启。",
-            "q_low_energy_wait",
+        q_hypothetical_feedback_helpful = likert(
+            "如果未来 AI 产品显示 AI 请求的估算能耗或资源使用情况，我认为这会有帮助。",
+            "q_hypothetical_feedback_helpful",
         )
-        q_low_energy_quality = likert(
-            "如果 AI 的低能耗模式可以减少约 30% 的估算能耗，但回答质量可能略低，我愿意在简单任务中开启。",
-            "q_low_energy_quality",
+        q_hypothetical_low_energy_mode = likert(
+            "如果未来 AI 产品提供低能耗模式，我愿意在简单任务中尝试使用。",
+            "q_hypothetical_low_energy_mode",
         )
-        q_default_low_energy = likert(
-            "如果 AI 产品默认开启低能耗模式，但允许用户手动切换到高质量模式，我支持这种设计。",
-            "q_default_low_energy",
+        q_hypothetical_wait_acceptance = likert(
+            "如果低能耗模式会让回答稍慢一些，我在简单任务中可以接受。",
+            "q_hypothetical_wait_acceptance",
+        )
+        q_hypothetical_quality_tradeoff = likert(
+            "如果低能耗模式可能让回答质量略低，我只会在不重要或简单任务中使用。",
+            "q_hypothetical_quality_tradeoff",
         )
 
-        render_card("能耗反馈体验", "请评价你对实验中提示信息的注意、理解和帮助性感受。", "energy")
-        render_likert_instruction()
-        q_feedback_attention = likert("我注意到了实验中的能耗反馈或能耗提示。", "q_feedback_attention")
-        q_feedback_understandability = likert("我觉得实验中的能耗反馈容易理解。", "q_feedback_understandability")
-        q_feedback_helpfulness = likert("我觉得能耗反馈有助于我更有意识地使用 AI。", "q_feedback_helpfulness")
+        q_static_feedback_attention = None
+        q_static_feedback_understandability = None
+        q_static_feedback_behavior_change = None
+        q_static_feedback_pressure = None
+        q_dynamic_feedback_attention = None
+        q_dynamic_feedback_understandability = None
+        q_dynamic_feedback_behavior_change = None
+        q_dynamic_cumulative_salience = None
+        q_dynamic_feedback_pressure = None
+        q_dynamic_feedback_fatigue = None
 
-        render_card("压力、内疚与反馈疲劳", "请评价这些提示是否影响了你的追问意愿、任务体验和长期接受度。", "warning")
-        render_likert_instruction()
-        q_feedback_intrusiveness = likert("我觉得能耗反馈有些打扰我完成任务。", "q_feedback_intrusiveness")
-        q_feedback_pressure = likert("能耗反馈让我在使用 AI 时感到压力。", "q_feedback_pressure")
-        q_feedback_guilt = likert("能耗反馈让我对继续使用 AI 产生了一些内疚感。", "q_feedback_guilt")
-        q_interaction_penalty = likert("我有时因为能耗提示而减少了本来可能有助于提升答案质量的追问。", "q_interaction_penalty")
-        q_feedback_fatigue = likert("如果真实 AI 产品长期显示类似能耗提示，我可能会逐渐忽略它。", "q_feedback_fatigue")
-        q_long_term_acceptance = likert("如果真实 AI 产品提供类似能耗反馈，我愿意长期使用。", "q_long_term_acceptance")
-        q_task_dependent_feedback = likert(
-            "我认为能耗提示应该只在长对话、高能耗任务或复杂任务中显示，而不是每次都显示。",
-            "q_task_dependent_feedback",
-        )
+        if condition == "static_feedback":
+            render_card("任务提示体验", "请根据您在任务中看到的提示作答。", "energy")
+            render_likert_instruction()
+            q_static_feedback_attention = likert("我注意到了任务中的能耗提示。", "q_static_feedback_attention")
+            q_static_feedback_understandability = likert("我觉得任务中的能耗提示容易理解。", "q_static_feedback_understandability")
+            q_static_feedback_behavior_change = likert("任务中的能耗提示影响了我使用 AI 的方式。", "q_static_feedback_behavior_change")
+            q_static_feedback_pressure = likert("任务中的能耗提示让我感到有压力。", "q_static_feedback_pressure")
+        elif condition == "dynamic_feedback":
+            render_card("任务反馈体验", "请根据您在任务中看到的反馈作答。", "energy")
+            render_likert_instruction()
+            q_dynamic_feedback_attention = likert("我注意到了每次 AI 回复后的能耗反馈。", "q_dynamic_feedback_attention")
+            q_dynamic_feedback_understandability = likert("我觉得每次 AI 回复后的能耗反馈容易理解。", "q_dynamic_feedback_understandability")
+            q_dynamic_feedback_behavior_change = likert("每次 AI 回复后的能耗反馈影响了我的提问方式。", "q_dynamic_feedback_behavior_change")
+            q_dynamic_cumulative_salience = likert("累计能耗反馈让我更注意自己向 AI 提问的次数。", "q_dynamic_cumulative_salience")
+            q_dynamic_feedback_pressure = likert("能耗反馈让我在使用 AI 时感到压力。", "q_dynamic_feedback_pressure")
+            q_dynamic_feedback_fatigue = likert("如果真实 AI 产品长期显示类似反馈，我可能会逐渐忽略它。", "q_dynamic_feedback_fatigue")
 
         render_card(
             "开放题",
-            (
-                "其中带“必填”的 3 个问题需要填写，且每题至少 5 个字符。"
-                "其他问题为可选，可根据你的实际想法补充。"
-            ),
+            "请用简短文字说明您的真实想法。带“必填”的问题需要填写。",
             "default",
         )
-        open_awareness = st.text_area("实验前，你是否意识到 AI 使用可能涉及能源消耗？请简单说明。（可选）")
-        open_behavior_change = st.text_area("在实验过程中，你是否改变了自己的提问方式？如果有，是如何改变的？（必填）")
-        open_feedback_preference = st.text_area(
-            "你认为哪种 AI 能耗提示方式最容易被用户接受？为什么？（必填）"
-        )
-        open_productive_iteration = st.text_area(
-            "在实验中，你有没有因为能耗提示而放弃某些本来可能有助于改善答案的追问？如果有，请举例说明。（必填）"
-        )
-        open_feedback_fatigue = st.text_area(
-            "如果真实 AI 产品长期显示类似能耗提示，你觉得自己会一直注意它，还是会逐渐忽略？为什么？（可选）"
-        )
-        open_design_suggestion = st.text_area(
-            "你认为怎样的 AI 能耗提示设计最合适？例如每次显示、累计显示、任务结束后显示、只在高能耗任务中显示、或者提供低能耗模式开关。（可选）"
-        )
-        submitted = st.form_submit_button("提交并完成实验", type="primary")
+        open_behavior_change = st.text_area("在实验过程中，您是否改变了自己向 AI 提问的方式？如果有，是如何改变的？（必填）")
+        open_feedback_effect = None
+        open_dynamic_iteration_effect = None
+        if condition in {"static_feedback", "dynamic_feedback"}:
+            open_feedback_effect = st.text_area("您觉得本实验中的能耗提示或反馈对您有什么影响？（必填）")
+        if condition == "dynamic_feedback":
+            open_dynamic_iteration_effect = st.text_area("每次 AI 回复后的能耗反馈是否影响了您继续追问或修改答案的意愿？请简单说明。（必填）")
+
+        submitted = st.form_submit_button("提交并完成", type="primary")
 
     if submitted:
         is_valid, errors = validate_post_survey(
-            open_awareness,
             open_behavior_change,
-            open_feedback_preference,
-            open_productive_iteration,
-            open_feedback_fatigue,
-            open_design_suggestion,
+            open_feedback_effect,
+            open_dynamic_iteration_effect,
+            condition,
         )
         if not is_valid:
             st.warning("请完成必填开放题后再提交。未完成：" + "、".join(errors) + "。")
@@ -1784,25 +1833,23 @@ def page_post_survey():
 
         save_post_survey(
             {
-                "q_low_energy_wait": q_low_energy_wait,
-                "q_low_energy_quality": q_low_energy_quality,
-                "q_default_low_energy": q_default_low_energy,
-                "q_feedback_attention": q_feedback_attention,
-                "q_feedback_understandability": q_feedback_understandability,
-                "q_feedback_helpfulness": q_feedback_helpfulness,
-                "q_feedback_intrusiveness": q_feedback_intrusiveness,
-                "q_feedback_pressure": q_feedback_pressure,
-                "q_feedback_guilt": q_feedback_guilt,
-                "q_interaction_penalty": q_interaction_penalty,
-                "q_feedback_fatigue": q_feedback_fatigue,
-                "q_long_term_acceptance": q_long_term_acceptance,
-                "q_task_dependent_feedback": q_task_dependent_feedback,
-                "open_awareness": open_awareness.strip(),
+                "q_hypothetical_feedback_helpful": q_hypothetical_feedback_helpful,
+                "q_hypothetical_low_energy_mode": q_hypothetical_low_energy_mode,
+                "q_hypothetical_wait_acceptance": q_hypothetical_wait_acceptance,
+                "q_hypothetical_quality_tradeoff": q_hypothetical_quality_tradeoff,
+                "q_static_feedback_attention": q_static_feedback_attention,
+                "q_static_feedback_understandability": q_static_feedback_understandability,
+                "q_static_feedback_behavior_change": q_static_feedback_behavior_change,
+                "q_static_feedback_pressure": q_static_feedback_pressure,
+                "q_dynamic_feedback_attention": q_dynamic_feedback_attention,
+                "q_dynamic_feedback_understandability": q_dynamic_feedback_understandability,
+                "q_dynamic_feedback_behavior_change": q_dynamic_feedback_behavior_change,
+                "q_dynamic_cumulative_salience": q_dynamic_cumulative_salience,
+                "q_dynamic_feedback_pressure": q_dynamic_feedback_pressure,
+                "q_dynamic_feedback_fatigue": q_dynamic_feedback_fatigue,
                 "open_behavior_change": open_behavior_change.strip(),
-                "open_feedback_preference": open_feedback_preference.strip(),
-                "open_productive_iteration": open_productive_iteration.strip(),
-                "open_feedback_fatigue": open_feedback_fatigue.strip(),
-                "open_design_suggestion": open_design_suggestion.strip(),
+                "open_feedback_effect": (open_feedback_effect or "").strip() or None,
+                "open_dynamic_iteration_effect": (open_dynamic_iteration_effect or "").strip() or None,
             }
         )
         log_event("post_survey_submitted")
@@ -1815,7 +1862,7 @@ def page_end():
     st.header("实验完成，感谢参与")
     st.success("你已经完成全部任务和问卷。")
     st.write(f"你的匿名 participant_id 是：`{st.session_state.participant_id}`")
-    show_estimation_notice()
+    st.info("如界面中出现过任何估算数值，这些数值仅用于研究目的，不代表真实平台测量结果。")
 
 
 # ====================
@@ -1916,9 +1963,6 @@ def main():
     ensure_api_key_for_experiment()
     init_session_state()
     debug_sidebar()
-
-    st.title(APP_TITLE)
-    st.caption(APP_SUBTITLE)
 
     page = st.session_state.page
     if page == "consent":
