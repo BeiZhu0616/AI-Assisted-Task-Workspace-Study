@@ -21,6 +21,7 @@ import streamlit as st
 APP_TITLE = "AI 协作任务研究"
 APP_SUBTITLE = "AI-Assisted Task Workspace Study"
 DEBUG = False
+SAVE_INCOMPLETE_DATA = False
 
 DEFAULT_MODEL_NAME = "deepseek-v4-flash"
 DEFAULT_DEEPSEEK_BASE_URL = "https://api.deepseek.com"
@@ -544,26 +545,7 @@ def get_task_index(task_id: str) -> int:
 
 def get_successful_prompt_count(task_id: str) -> int:
     history = st.session_state.get("histories", {}).get(task_id, [])
-    session_count = sum(1 for message in history if message.get("role") == "user")
-    if session_count:
-        return session_count
-
-    participant_id = st.session_state.get("participant_id")
-    if not participant_id:
-        return 0
-    try:
-        with get_db() as conn:
-            row = conn.execute(
-                """
-                SELECT COUNT(*) AS prompt_count
-                FROM messages
-                WHERE participant_id = ? AND task_id = ?
-                """,
-                (participant_id, task_id),
-            ).fetchone()
-            return int(row["prompt_count"] if row else 0)
-    except Exception:
-        return 0
+    return sum(1 for message in history if message.get("role") == "user")
 
 
 def validate_pre_survey(gender, education, ai_usage_frequency, birth_year, birth_month) -> tuple[bool, list[str]]:
@@ -762,7 +744,8 @@ def init_db():
                 task_id TEXT,
                 event_type TEXT,
                 event_time TEXT,
-                event_value TEXT
+                event_value TEXT,
+                page TEXT
             )
             """
         )
@@ -823,13 +806,14 @@ def init_db():
                 "birth_month": "INTEGER",
             },
         )
+        ensure_columns(conn, "events", {"page": "TEXT"})
         conn.commit()
 
 
 def get_existing_participant(participant_id: str):
     with get_db() as conn:
         return conn.execute(
-            "SELECT * FROM participants WHERE participant_id = ?",
+            "SELECT * FROM participants WHERE participant_id = ? AND completed = 1",
             (participant_id,),
         ).fetchone()
 
@@ -860,129 +844,30 @@ def set_participant_condition(participant_id: str, condition: str):
 
 
 def update_pre_survey(data: dict):
-    with get_db() as conn:
-        conn.execute(
-            """
-            UPDATE participants
-            SET birth_year = ?,
-                birth_month = ?,
-                gender = ?,
-                education = ?,
-                ai_usage_frequency = ?,
-                baseline_energy_awareness = ?,
-                environmental_attitude = ?,
-                attention_check_pass = ?
-            WHERE participant_id = ?
-            """,
-            (
-                data["birth_year"],
-                data["birth_month"],
-                data["gender"],
-                data["education"],
-                data["ai_usage_frequency"],
-                data["baseline_energy_awareness"],
-                data["environmental_attitude"],
-                data["attention_check_pass"],
-                st.session_state.participant_id,
-            ),
-        )
-        existing = conn.execute(
-            """
-            SELECT id FROM questionnaires
-            WHERE participant_id = ? AND q_ai_use_1 IS NOT NULL
-            ORDER BY id DESC LIMIT 1
-            """,
-            (st.session_state.participant_id,),
-        ).fetchone()
-        questionnaire_values = (
-            st.session_state.participant_id,
-            st.session_state.condition,
-            now_iso(),
-            data["q_ai_use_1"],
-            data["q_ai_use_2"],
-            data["q_energy_awareness_1"],
-            data["q_energy_awareness_2"],
-            data["q_energy_awareness_3"],
-            data["q_environment_1"],
-            data["q_environment_2"],
-        )
-        if existing:
-            conn.execute(
-                """
-                UPDATE questionnaires
-                SET participant_id = ?, condition = ?, submitted_at = ?,
-                    q_ai_use_1 = ?, q_ai_use_2 = ?,
-                    q_energy_awareness_1 = ?, q_energy_awareness_2 = ?, q_energy_awareness_3 = ?,
-                    q_environment_1 = ?, q_environment_2 = ?
-                WHERE id = ?
-                """,
-                questionnaire_values + (existing["id"],),
-            )
-        else:
-            conn.execute(
-                """
-                INSERT INTO questionnaires (
-                    participant_id, condition, submitted_at,
-                    q_ai_use_1, q_ai_use_2,
-                    q_energy_awareness_1, q_energy_awareness_2, q_energy_awareness_3,
-                    q_environment_1, q_environment_2
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                questionnaire_values,
-            )
-        conn.commit()
+    participant_fields = {
+        "birth_year": data.get("birth_year"),
+        "birth_month": data.get("birth_month"),
+        "gender": data.get("gender"),
+        "education": data.get("education"),
+        "ai_usage_frequency": data.get("ai_usage_frequency"),
+        "baseline_energy_awareness": data.get("baseline_energy_awareness"),
+        "environmental_attitude": data.get("environmental_attitude"),
+        "attention_check_pass": data.get("attention_check_pass"),
+    }
+    st.session_state.participant.update(participant_fields)
+    st.session_state.pre_survey = {
+        "q_ai_use_1": data.get("q_ai_use_1"),
+        "q_ai_use_2": data.get("q_ai_use_2"),
+        "q_energy_awareness_1": data.get("q_energy_awareness_1"),
+        "q_energy_awareness_2": data.get("q_energy_awareness_2"),
+        "q_energy_awareness_3": data.get("q_energy_awareness_3"),
+        "q_environment_1": data.get("q_environment_1"),
+        "q_environment_2": data.get("q_environment_2"),
+    }
 
 
 def save_message(record: dict):
-    with get_db() as conn:
-        conn.execute(
-            """
-            INSERT INTO messages (
-                participant_id, condition, task_id, task_index, turn_id, user_prompt, ai_response,
-                prompt_timestamp, response_timestamp, latency_sec,
-                input_tokens, output_tokens, total_tokens,
-                estimated_energy_wh, estimated_led_minutes,
-                cumulative_energy_wh, cumulative_led_minutes,
-                task_copy_similarity, is_task_copying,
-                context_copy_similarity, requirements_copy_similarity,
-                is_context_copying, is_requirements_copying,
-                feedback_displayed, feedback_text, model_name, temperature, max_tokens
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                record["participant_id"],
-                record["condition"],
-                record["task_id"],
-                record["task_index"],
-                record["turn_id"],
-                record["user_prompt"],
-                record["ai_response"],
-                record["prompt_timestamp"],
-                record["response_timestamp"],
-                record["latency_sec"],
-                record["input_tokens"],
-                record["output_tokens"],
-                record["total_tokens"],
-                record["estimated_energy_wh"],
-                record["estimated_led_minutes"],
-                record["cumulative_energy_wh"],
-                record["cumulative_led_minutes"],
-                record["task_copy_similarity"],
-                record["is_task_copying"],
-                record.get("context_copy_similarity"),
-                record.get("requirements_copy_similarity"),
-                record.get("is_context_copying"),
-                record.get("is_requirements_copying"),
-                record["feedback_displayed"],
-                record["feedback_text"],
-                record["model_name"],
-                record["temperature"],
-                record["max_tokens"],
-            ),
-        )
-        conn.commit()
+    st.session_state.messages.append(dict(record))
 
 
 def save_task_session(task_id: str, final_answer: str, satisfaction: int, perceived_efficiency: int, cognitive_load: int):
@@ -997,62 +882,141 @@ def save_task_session(task_id: str, final_answer: str, satisfaction: int, percei
 
     request_count = st.session_state.turn_counts.get(task_id, 0)
     task_index = get_task_index(task_id)
-    with get_db() as conn:
-        existing = conn.execute(
-            """
-            SELECT id FROM task_sessions
-            WHERE participant_id = ? AND task_id = ?
-            ORDER BY id DESC LIMIT 1
-            """,
-            (st.session_state.participant_id, task_id),
-        ).fetchone()
-        task_values = (
-            st.session_state.participant_id,
-            st.session_state.condition,
-            task_id,
-            task_index,
-            start_time,
-            end_time,
-            duration,
-            request_count,
-            final_answer,
-            satisfaction,
-            perceived_efficiency,
-            cognitive_load,
-        )
-        if existing:
-            conn.execute(
-                """
-                UPDATE task_sessions
-                SET participant_id = ?, condition = ?, task_id = ?, task_index = ?,
-                    task_start_time = ?, task_end_time = ?, task_duration_sec = ?,
-                    request_count = ?, final_answer = ?,
-                    satisfaction = ?, perceived_efficiency = ?, cognitive_load = ?
-                WHERE id = ?
-                """,
-                task_values + (existing["id"],),
-            )
-        else:
-            conn.execute(
-                """
-                INSERT INTO task_sessions (
-                    participant_id, condition, task_id, task_index,
-                    task_start_time, task_end_time, task_duration_sec,
-                    request_count, final_answer,
-                    satisfaction, perceived_efficiency, cognitive_load
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                task_values,
-            )
-        conn.commit()
+    record = {
+        "participant_id": st.session_state.participant_id,
+        "condition": st.session_state.condition,
+        "task_id": task_id,
+        "task_index": task_index,
+        "task_start_time": start_time,
+        "task_end_time": end_time,
+        "task_duration_sec": duration,
+        "request_count": request_count,
+        "final_answer": final_answer,
+        "satisfaction": satisfaction,
+        "perceived_efficiency": perceived_efficiency,
+        "cognitive_load": cognitive_load,
+    }
+    existing_index = next(
+        (index for index, item in enumerate(st.session_state.task_sessions) if item.get("task_id") == task_id),
+        None,
+    )
+    if existing_index is None:
+        st.session_state.task_sessions.append(record)
+    else:
+        st.session_state.task_sessions[existing_index] = record
 
 
 def save_post_survey(data: dict):
-    columns = [
+    st.session_state.questionnaires = dict(data)
+    st.session_state.questionnaires["submitted_at"] = now_iso()
+
+
+def log_event(event_type: str, event_value: str = "", task_id: str | None = None):
+    participant_id = st.session_state.get("participant_id", "")
+    condition = st.session_state.get("condition", "")
+    st.session_state.events.append(
+        {
+            "participant_id": participant_id,
+            "condition": condition,
+            "task_id": task_id,
+            "event_type": event_type,
+            "event_time": now_iso(),
+            "event_value": str(event_value),
+            "page": st.session_state.get("page", ""),
+        }
+    )
+
+
+def save_completed_experiment() -> bool:
+    if st.session_state.get("saved_to_db"):
+        st.info("数据已保存。")
+        return True
+
+    if len(st.session_state.get("task_sessions", [])) < len(TASKS):
+        st.error("系统检测到任务数据不完整，请确认三个任务均已提交。")
+        return False
+
+    participant_id = st.session_state.participant_id
+    participant = dict(st.session_state.get("participant", {}))
+    participant.update(
+        {
+            "participant_id": participant_id,
+            "condition": st.session_state.condition,
+            "created_at": participant.get("created_at") or now_iso(),
+            "completed": 1,
+        }
+    )
+
+    participant_columns = [
+        "participant_id",
+        "condition",
+        "created_at",
+        "completed",
+        "age",
+        "birth_year",
+        "birth_month",
+        "gender",
+        "education",
+        "ai_usage_frequency",
+        "baseline_energy_awareness",
+        "environmental_attitude",
+        "attention_check_pass",
+    ]
+    message_columns = [
+        "participant_id",
+        "condition",
+        "task_id",
+        "task_index",
+        "turn_id",
+        "user_prompt",
+        "ai_response",
+        "prompt_timestamp",
+        "response_timestamp",
+        "latency_sec",
+        "input_tokens",
+        "output_tokens",
+        "total_tokens",
+        "estimated_energy_wh",
+        "estimated_led_minutes",
+        "cumulative_energy_wh",
+        "cumulative_led_minutes",
+        "task_copy_similarity",
+        "is_task_copying",
+        "context_copy_similarity",
+        "requirements_copy_similarity",
+        "is_context_copying",
+        "is_requirements_copying",
+        "feedback_displayed",
+        "feedback_text",
+        "model_name",
+        "temperature",
+        "max_tokens",
+    ]
+    task_session_columns = [
+        "participant_id",
+        "condition",
+        "task_id",
+        "task_index",
+        "task_start_time",
+        "task_end_time",
+        "task_duration_sec",
+        "request_count",
+        "final_answer",
+        "satisfaction",
+        "perceived_efficiency",
+        "cognitive_load",
+    ]
+    questionnaire_columns = [
         "participant_id",
         "condition",
         "submitted_at",
+        "q_ai_use_1",
+        "q_ai_use_2",
+        "q_energy_awareness_1",
+        "q_energy_awareness_2",
+        "q_energy_awareness_3",
+        "q_environment_1",
+        "q_environment_2",
         "q_low_energy_wait",
         "q_low_energy_quality",
         "q_default_low_energy",
@@ -1089,57 +1053,86 @@ def save_post_survey(data: dict):
         "open_feedback_effect",
         "open_dynamic_iteration_effect",
     ]
-    values = {
-        "participant_id": st.session_state.participant_id,
+    event_columns = [
+        "participant_id",
+        "condition",
+        "task_id",
+        "event_type",
+        "event_time",
+        "event_value",
+        "page",
+    ]
+
+    questionnaire = {
+        "participant_id": participant_id,
         "condition": st.session_state.condition,
-        "submitted_at": now_iso(),
+        "submitted_at": st.session_state.questionnaires.get("submitted_at") or now_iso(),
     }
-    for column in columns:
-        if column not in values:
-            values[column] = data.get(column)
+    questionnaire.update(st.session_state.get("pre_survey", {}))
+    questionnaire.update(st.session_state.get("questionnaires", {}))
+    questionnaire["participant_id"] = participant_id
+    questionnaire["condition"] = st.session_state.condition
+    questionnaire["submitted_at"] = questionnaire.get("submitted_at") or now_iso()
 
-    with get_db() as conn:
-        existing = conn.execute(
-            """
-            SELECT id FROM questionnaires
-            WHERE participant_id = ?
-            ORDER BY id DESC LIMIT 1
-            """,
-            (st.session_state.participant_id,),
-        ).fetchone()
-        questionnaire_values = tuple(values[column] for column in columns)
-        if existing:
-            assignments = ", ".join([f"{column} = ?" for column in columns])
+    try:
+        with get_db() as conn:
+            conn.execute("BEGIN")
+            for table_name in ["messages", "task_sessions", "questionnaires", "events"]:
+                conn.execute(f"DELETE FROM {table_name} WHERE participant_id = ?", (participant_id,))
+            conn.execute("DELETE FROM participants WHERE participant_id = ?", (participant_id,))
+
+            participant_placeholders = ", ".join(["?"] * len(participant_columns))
             conn.execute(
-                f"UPDATE questionnaires SET {assignments} WHERE id = ?",
-                questionnaire_values + (existing["id"],),
+                f"INSERT INTO participants ({', '.join(participant_columns)}) VALUES ({participant_placeholders})",
+                tuple(participant.get(column) for column in participant_columns),
             )
-        else:
-            placeholders = ", ".join(["?"] * len(columns))
-            column_sql = ", ".join(columns)
+
+            message_placeholders = ", ".join(["?"] * len(message_columns))
+            for record in st.session_state.get("messages", []):
+                row = dict(record)
+                row["participant_id"] = participant_id
+                row["condition"] = st.session_state.condition
+                conn.execute(
+                    f"INSERT INTO messages ({', '.join(message_columns)}) VALUES ({message_placeholders})",
+                    tuple(row.get(column) for column in message_columns),
+                )
+
+            task_placeholders = ", ".join(["?"] * len(task_session_columns))
+            for record in st.session_state.get("task_sessions", []):
+                row = dict(record)
+                row["participant_id"] = participant_id
+                row["condition"] = st.session_state.condition
+                conn.execute(
+                    f"INSERT INTO task_sessions ({', '.join(task_session_columns)}) VALUES ({task_placeholders})",
+                    tuple(row.get(column) for column in task_session_columns),
+                )
+
+            questionnaire_placeholders = ", ".join(["?"] * len(questionnaire_columns))
             conn.execute(
-                f"INSERT INTO questionnaires ({column_sql}) VALUES ({placeholders})",
-                questionnaire_values,
+                f"INSERT INTO questionnaires ({', '.join(questionnaire_columns)}) VALUES ({questionnaire_placeholders})",
+                tuple(questionnaire.get(column) for column in questionnaire_columns),
             )
-        conn.execute(
-            "UPDATE participants SET completed = 1 WHERE participant_id = ?",
-            (st.session_state.participant_id,),
-        )
-        conn.commit()
 
+            event_placeholders = ", ".join(["?"] * len(event_columns))
+            for record in st.session_state.get("events", []):
+                row = dict(record)
+                row["participant_id"] = participant_id
+                row["condition"] = st.session_state.condition
+                conn.execute(
+                    f"INSERT INTO events ({', '.join(event_columns)}) VALUES ({event_placeholders})",
+                    tuple(row.get(column) for column in event_columns),
+                )
+            conn.commit()
+    except Exception as exc:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        st.error(f"数据保存失败，请联系研究者。错误信息：{str(exc)[:200]}")
+        return False
 
-def log_event(event_type: str, event_value: str = "", task_id: str | None = None):
-    participant_id = st.session_state.get("participant_id", "")
-    condition = st.session_state.get("condition", "")
-    with get_db() as conn:
-        conn.execute(
-            """
-            INSERT INTO events (participant_id, condition, task_id, event_type, event_time, event_value)
-            VALUES (?, ?, ?, ?, ?, ?)
-            """,
-            (participant_id, condition, task_id, event_type, now_iso(), str(event_value)),
-        )
-        conn.commit()
+    st.session_state.saved_to_db = True
+    return True
 
 
 # ====================
@@ -1308,7 +1301,6 @@ def init_participant_session():
     forced_condition = get_query_param("condition")
     if forced_condition in CONDITIONS:
         st.session_state.condition = forced_condition
-        set_participant_condition(st.session_state.participant_id, forced_condition)
         return
 
     existing = get_existing_participant(st.session_state.participant_id)
@@ -1316,9 +1308,6 @@ def init_participant_session():
         st.session_state.condition = existing["condition"]
     elif "condition" not in st.session_state:
         st.session_state.condition = random.choice(CONDITIONS)
-        create_participant(st.session_state.participant_id, st.session_state.condition)
-    else:
-        create_participant(st.session_state.participant_id, st.session_state.condition)
 
 
 def init_session_state():
@@ -1332,10 +1321,27 @@ def init_session_state():
         "cumulative_led": {},
         "task_start_times": {},
         "last_feedback": {},
+        "pre_survey": {},
+        "task_sessions": [],
+        "messages": [],
+        "questionnaires": {},
+        "events": [],
+        "saved_to_db": False,
     }
     for key, value in defaults.items():
         if key not in st.session_state:
             st.session_state[key] = value
+
+    if "participant" not in st.session_state:
+        st.session_state.participant = {
+            "participant_id": st.session_state.participant_id,
+            "condition": st.session_state.condition,
+            "created_at": now_iso(),
+            "completed": 0,
+        }
+    else:
+        st.session_state.participant["participant_id"] = st.session_state.participant_id
+        st.session_state.participant["condition"] = st.session_state.condition
 
     for task in TASKS:
         task_id = task["id"]
@@ -1854,6 +1860,8 @@ def page_post_survey():
         )
         log_event("post_survey_submitted")
         log_event("experiment_completed")
+        if not save_completed_experiment():
+            return
         st.session_state.page = "end"
         rerun()
 
@@ -1882,7 +1890,10 @@ def admin_page():
         st.warning("管理员密码不正确。")
         return
 
-    st.info("如果部署在 Streamlit Community Cloud，请在正式收集数据期间定期导出 CSV 备份。")
+    if st.session_state.pop("admin_reset_success", False):
+        st.success("已清空所有测试数据。")
+
+    st.info("当前数据库仅包含已完成实验并成功提交的数据。若部署在 Streamlit Community Cloud，请在正式收集数据期间定期导出 CSV 备份。")
     tables = ["participants", "messages", "task_sessions", "questionnaires", "events"]
     selected_table = st.selectbox("选择数据表", tables)
 
@@ -1945,6 +1956,36 @@ def admin_page():
         file_name="ai_scoring_input.csv",
         mime="text/csv",
     )
+
+    st.divider()
+    with st.expander("危险操作：清空测试数据", expanded=False):
+        st.warning(
+            "该操作会删除 participants、messages、task_sessions、questionnaires、events 中的所有记录。"
+            "请确保已经导出备份后再执行。"
+        )
+        reset_confirmation = st.text_input(
+            "请输入 RESET_DATA 以启用删除按钮",
+            key="admin_reset_confirmation",
+        )
+        reset_enabled = reset_confirmation.strip() == "RESET_DATA"
+        if st.button(
+            "确认清空所有测试数据",
+            disabled=not reset_enabled,
+            type="primary",
+        ):
+            tables_to_clear = [
+                "participants",
+                "messages",
+                "task_sessions",
+                "questionnaires",
+                "events",
+            ]
+            with get_db() as conn:
+                for table_name in tables_to_clear:
+                    conn.execute(f"DELETE FROM {table_name}")
+                conn.commit()
+            st.session_state.admin_reset_success = True
+            rerun()
 
 
 # ====================
